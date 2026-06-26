@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package thumbgen.v1;
+
+option go_package = "gen/thumbgen/v1";
+
+import "google/protobuf/timestamp.proto";
+
+// ThumbGenService manages thumbnail generation jobs.
+service ThumbGenService {
+  // EnqueueJob creates a thumbnail generation job.
+  rpc EnqueueJob(EnqueueJobRequest) returns (EnqueueJobResponse);
+  // GetJobStatus returns the current status of a job.
+  rpc GetJobStatus(GetJobStatusRequest) returns (GetJobStatusResponse);
+  // GetThumbnail returns the generated thumbnail metadata.
+  rpc GetThumbnail(GetThumbnailRequest) returns (GetThumbnailResponse);
+}
+
+// EnqueueJobRequest creates a thumbnail generation job.
+message EnqueueJobRequest {
+  // file_id is the source file identifier.
+  string file_id = 1;
+  // user_id is the identity of the caller.
+  string user_id = 2;
+  // input_key is the S3/MinIO key of the source file.
+  string input_key = 3;
+  // mime_type is the MIME type of the source file.
+  string mime_type = 4;
+}
+
+// EnqueueJobResponse contains the created job record.
+message EnqueueJobResponse {
+  // job is the created job record.
+  JobResponse job = 1;
+}
+
+// JobResponse contains job metadata.
+message JobResponse {
+  // id is the job UUID.
+  string id = 1;
+  // file_id is the source file identifier.
+  string file_id = 2;
+  // user_id is the owner's user ID.
+  string user_id = 3;
+  // status is the job status.
+  JobStatus status = 4;
+  // input_key is the S3/MinIO key of the source file.
+  string input_key = 5;
+  // output_key is the S3/MinIO key of the generated thumbnail (empty until done).
+  string output_key = 6;
+  // error_msg is set when the job failed (empty otherwise).
+  string error_msg = 7;
+  // created_at is the creation timestamp.
+  google.protobuf.Timestamp created_at = 8;
+}
+
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_QUEUED = 1;
+  JOB_STATUS_PROCESSING = 2;
+  JOB_STATUS_DONE = 3;
+  JOB_STATUS_FAILED = 4;
+}
+
+// GetJobStatusRequest retrieves a job's status.
+message GetJobStatusRequest {
+  // job_id is the job UUID.
+  string job_id = 1;
+}
+
+// GetJobStatusResponse contains the job record.
+message GetJobStatusResponse {
+  // job is the job record.
+  JobResponse job = 1;
+}
+
+// GetThumbnailRequest retrieves thumbnail metadata for a file.
+message GetThumbnailRequest {
+  // file_id is the source file identifier.
+  string file_id = 1;
+}
+
+// GetThumbnailResponse contains thumbnail metadata.
+message GetThumbnailResponse {
+  // file_id is the source file identifier.
+  string file_id = 1;
+  // format is the thumbnail format (e.g., "webp").
+  string format = 2;
+  // width is the thumbnail width in pixels.
+  int32 width = 3;
+  // height is the thumbnail height in pixels.
+  int32 height = 4;
+  // download_url is the presigned URL for downloading the thumbnail.
+  string download_url = 5;
+  // storage_key is the S3/MinIO key of the thumbnail.
+  string storage_key = 6;
+}

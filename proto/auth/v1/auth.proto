@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "gen/auth/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// AuthService provides user identity management and session validation.
+service AuthService {
+  // GetUser retrieves a user by their UUID.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  // ValidateSession checks whether a session token is valid.
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse);
+  // GetPublicKey retrieves the public key material for JWT verification.
+  rpc GetPublicKey(google.protobuf.Empty) returns (GetPublicKeyResponse);
+}
+
+// GetUserRequest contains the user identifier for lookup.
+message GetUserRequest {
+  // user_id is the UUID of the user to retrieve.
+  string user_id = 1;
+}
+
+// GetUserResponse contains the retrieved user data.
+message GetUserResponse {
+  // id is the user's UUID.
+  string id = 1;
+  // email is the user's email address.
+  string email = 2;
+  // name is the user's display name.
+  string name = 3;
+  // created_at is the account creation timestamp.
+  google.protobuf.Timestamp created_at = 4;
+  // updated_at is the last modification timestamp.
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// ValidateSessionRequest contains the session token to validate.
+message ValidateSessionRequest {
+  // session_id is the opaque session token.
+  string session_id = 1;
+}
+
+// ValidateSessionResponse contains the validation result.
+message ValidateSessionResponse {
+  // valid is true when the session token is active and not expired.
+  bool valid = 1;
+  // user_id is the identity associated with the session.
+  string user_id = 2;
+}
+
+// GetPublicKeyResponse contains the public key material.
+message GetPublicKeyResponse {
+  // jwks_json is the JWKS-encoded public key in JSON format.
+  string jwks_json = 1;
+}

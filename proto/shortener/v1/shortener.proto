@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package shortener.v1;
+
+option go_package = "gen/shortener/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ShortenerService manages short link creation and lookup.
+service ShortenerService {
+  // CreateLink creates a new short link.
+  rpc CreateLink(CreateLinkRequest) returns (CreateLinkResponse);
+  // GetLink retrieves a short link by slug.
+  rpc GetLink(GetLinkRequest) returns (GetLinkResponse);
+  // DeleteLink removes a short link.
+  rpc DeleteLink(DeleteLinkRequest) returns (google.protobuf.Empty);
+  // ListLinks returns paginated short links for a user.
+  rpc ListLinks(ListLinksRequest) returns (ListLinksResponse);
+}
+
+// CreateLinkRequest creates a new short link.
+message CreateLinkRequest {
+  // user_id is the identity of the caller.
+  string user_id = 1;
+  // file_id is the file identifier the link points to.
+  string file_id = 2;
+  // target_url is the original long URL.
+  string target_url = 3;
+  // expires_at is an optional expiration timestamp.
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+// CreateLinkResponse contains the created short link.
+message CreateLinkResponse {
+  // link is the created short link record.
+  ShortLinkResponse link = 1;
+}
+
+// ShortLinkResponse contains short link data.
+message ShortLinkResponse {
+  // id is the link UUID.
+  string id = 1;
+  // user_id is the owner's user ID.
+  string user_id = 2;
+  // slug is the 6-character short code.
+  string slug = 3;
+  // file_id is the file identifier the link points to.
+  string file_id = 4;
+  // target_url is the original long URL.
+  string target_url = 5;
+  // hit_count is the number of times this link has been accessed.
+  int64 hit_count = 6;
+  // expires_at is the expiration timestamp (empty if never).
+  google.protobuf.Timestamp expires_at = 7;
+  // created_at is the creation timestamp.
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// GetLinkRequest retrieves a short link by slug.
+message GetLinkRequest {
+  // slug is the 6-character short code.
+  string slug = 1;
+}
+
+// GetLinkResponse contains the retrieved short link.
+message GetLinkResponse {
+  // link is the short link record.
+  ShortLinkResponse link = 1;
+}
+
+// DeleteLinkRequest removes a short link.
+message DeleteLinkRequest {
+  // link_id is the link UUID.
+  string link_id = 1;
+  // user_id is the identity of the caller.
+  string user_id = 2;
+}
+
+// ListLinksRequest paginates links for a user.
+message ListLinksRequest {
+  // user_id is the identity of the caller.
+  string user_id = 1;
+  // page_size is the maximum number of results (1-200).
+  int32 page_size = 2;
+  // page_token is the opaque cursor from a previous response.
+  string page_token = 3;
+}
+
+// ListLinksResponse contains a page of short links.
+message ListLinksResponse {
+  // links is the list of short link records for this page.
+  repeated ShortLinkResponse links = 1;
+  // next_page_token is the cursor for the next page (empty if last).
+  string next_page_token = 2;
+}

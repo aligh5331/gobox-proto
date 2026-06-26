@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package fileupload.v1;
+
+option go_package = "gen/fileupload/v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// FileUploadService manages file uploads and retrieval.
+service FileUploadService {
+  // InitiateUpload begins an upload and returns presigned URL.
+  rpc InitiateUpload(InitiateUploadRequest) returns (InitiateUploadResponse);
+  // ConfirmUpload finalises a completed upload.
+  rpc ConfirmUpload(ConfirmUploadRequest) returns (ConfirmUploadResponse);
+  // GetFile retrieves file metadata.
+  rpc GetFile(GetFileRequest) returns (GetFileResponse);
+  // ListFiles returns paginated file metadata for a user.
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  // DeleteFile soft-deletes a file.
+  rpc DeleteFile(DeleteFileRequest) returns (google.protobuf.Empty);
+  // GetDownloadURL returns a presigned download URL.
+  rpc GetDownloadURL(GetDownloadURLRequest) returns (GetDownloadURLResponse);
+}
+
+// InitiateUploadRequest contains upload parameters.
+message InitiateUploadRequest {
+  // user_id is the identity of the caller.
+  string user_id = 1;
+  // name is the original file name.
+  string name = 2;
+  // size is the expected total file size in bytes.
+  int64 size = 3;
+  // mime_type is the MIME type of the file.
+  string mime_type = 4;
+}
+
+// InitiateUploadResponse contains upload session details.
+message InitiateUploadResponse {
+  // file_id is the file identifier reserved for this upload.
+  string file_id = 1;
+  // upload_url is the presigned S3 upload URL.
+  string upload_url = 2;
+  // upload_headers contains required headers for the upload (e.g., Content-Type).
+  map<string, string> upload_headers = 3;
+}
+
+// ConfirmUploadRequest finalises an upload session.
+message ConfirmUploadRequest {
+  // file_id is the file identifier.
+  string file_id = 1;
+  // user_id is the identity of the caller.
+  string user_id = 2;
+  // storage_key is the S3/MinIO object key.
+  string storage_key = 3;
+  // size is the actual file size in bytes.
+  int64 size = 4;
+}
+
+// ConfirmUploadResponse contains the confirmed file record.
+message ConfirmUploadResponse {
+  // file contains the confirmed file record.
+  FileResponse file = 1;
+}
+
+// FileResponse contains file metadata.
+message FileResponse {
+  // id is the file UUID.
+  string id = 1;
+  // user_id is the owner's user ID.
+  string user_id = 2;
+  // name is the original file name.
+  string name = 3;
+  // storage_key is the S3/MinIO object key.
+  string storage_key = 4;
+  // mime_type is the MIME type.
+  string mime_type = 5;
+  // size is the file size in bytes.
+  int64 size = 6;
+  // status is the file status (PENDING, READY, etc.).
+  FileStatus status = 7;
+  // created_at is the creation timestamp.
+  google.protobuf.Timestamp created_at = 8;
+  // updated_at is the last modification timestamp.
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+enum FileStatus {
+  FILE_STATUS_UNSPECIFIED = 0;
+  FILE_STATUS_PENDING = 1;
+  FILE_STATUS_READY = 2;
+  FILE_STATUS_DELETED = 3;
+}
+
+// GetFileRequest retrieves a single file by ID.
+message GetFileRequest {
+  // file_id is the file identifier.
+  string file_id = 1;
+  // user_id is the identity of the caller.
+  string user_id = 2;
+}
+
+// GetFileResponse contains file metadata.
+message GetFileResponse {
+  // file is the file record.
+  FileResponse file = 1;
+}
+
+// ListFilesRequest paginates files for a user.
+message ListFilesRequest {
+  // user_id is the identity of the caller.
+  string user_id = 1;
+  // page_size is the maximum number of results (1-200).
+  int32 page_size = 2;
+  // page_token is the opaque cursor from a previous response.
+  string page_token = 3;
+}
+
+// ListFilesResponse contains a page of file records.
+message ListFilesResponse {
+  // files is the list of file records for this page.
+  repeated FileResponse files = 1;
+  // next_page_token is the cursor for the next page (empty if last).
+  string next_page_token = 2;
+}
+
+// DeleteFileRequest deletes a file by ID.
+message DeleteFileRequest {
+  // file_id is the file identifier.
+  string file_id = 1;
+  // user_id is the identity of the caller.
+  string user_id = 2;
+}
+
+// GetDownloadURLRequest returns a presigned download URL.
+message GetDownloadURLRequest {
+  // file_id is the file identifier.
+  string file_id = 1;
+  // ttl_seconds is the time-to-live for the presigned URL in seconds.
+  int32 ttl_seconds = 2;
+}
+
+// GetDownloadURLResponse contains the presigned URL.
+message GetDownloadURLResponse {
+  // url is the presigned URL for downloading the file.
+  string url = 1;
+  // expires_at is when the URL expires.
+  google.protobuf.Timestamp expires_at = 2;
+}
