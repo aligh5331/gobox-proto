@@ -1,4 +1,4 @@
-module git.0lab.ir/aligh/gobox-proto
+module github.com/aligh5331/gobox-proto
 
 go 1.26.3
 
