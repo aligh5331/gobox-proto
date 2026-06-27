@@ -15,6 +15,21 @@ service AuthService {
   rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse);
   // GetPublicKey retrieves the public key material for JWT verification.
   rpc GetPublicKey(google.protobuf.Empty) returns (GetPublicKeyResponse);
+
+  // Register creates a new user account and returns tokens with a session.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Login authenticates a user and returns tokens with a session.
+  rpc Login(LoginRequest) returns (LoginResponse);
+  // RefreshToken rotates a refresh token and returns a new token pair.
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  // Logout revokes a single session by session_id.
+  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+  // LogoutAll revokes all sessions for a user.
+  rpc LogoutAll(LogoutAllRequest) returns (google.protobuf.Empty);
+  // UpdateProfile updates the user's display name.
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  // ChangePassword changes the user's password.
+  rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
 }
 
 // GetUserRequest contains the user identifier for lookup.
@@ -55,4 +70,118 @@ message ValidateSessionResponse {
 message GetPublicKeyResponse {
   // jwks_json is the JWKS-encoded public key in JSON format.
   string jwks_json = 1;
+}
+
+// ---------------------------------------------------------------------------
+// ADR 002 — User lifecycle messages
+// ---------------------------------------------------------------------------
+
+// TokenPair contains an access token (JWT) and its associated refresh token.
+message TokenPair {
+  // access_token is the JWT (RS256-signed), valid for expires_in seconds.
+  string access_token = 1;
+  // refresh_token is an opaque random string for token rotation.
+  string refresh_token = 2;
+  // expires_in is the access token TTL in seconds (typically 900).
+  int64 expires_in = 3;
+}
+
+// SessionProto contains the session metadata returned after login or register.
+message SessionProto {
+  // id is the session UUID.
+  string id = 1;
+  // user_id is the UUID of the session owner.
+  string user_id = 2;
+  // expires_at is the session expiration timestamp.
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+// RegisterRequest creates a new user account.
+message RegisterRequest {
+  // email is the user's email address (must be unique).
+  string email = 1;
+  // name is the user's display name.
+  string name = 2;
+  // password is the plaintext password (bcrypt-hashed server-side).
+  string password = 3;
+}
+
+// RegisterResponse contains the created user, token pair, and session.
+message RegisterResponse {
+  // user is the newly created user record.
+  GetUserResponse user = 1;
+  // tokens is the access and refresh token pair.
+  TokenPair tokens = 2;
+  // session is the newly created session.
+  SessionProto session = 3;
+}
+
+// LoginRequest authenticates a user.
+message LoginRequest {
+  // email is the user's email address.
+  string email = 1;
+  // password is the plaintext password.
+  string password = 2;
+  // user_agent is the client's User-Agent header.
+  string user_agent = 3;
+  // ip is the client's IP address.
+  string ip = 4;
+}
+
+// LoginResponse contains the authenticated user, token pair, and session.
+message LoginResponse {
+  // user is the authenticated user record.
+  GetUserResponse user = 1;
+  // tokens is the access and refresh token pair.
+  TokenPair tokens = 2;
+  // session is the newly created session.
+  SessionProto session = 3;
+}
+
+// RefreshTokenRequest rotates a refresh token.
+message RefreshTokenRequest {
+  // refresh_token is the opaque token from a previous Login or RefreshToken response.
+  string refresh_token = 1;
+}
+
+// RefreshTokenResponse contains the new token pair after rotation.
+message RefreshTokenResponse {
+  // tokens is the new access and rotated refresh token pair.
+  TokenPair tokens = 1;
+}
+
+// LogoutRequest revokes a single session.
+message LogoutRequest {
+  // session_id is the UUID of the session to revoke.
+  string session_id = 1;
+}
+
+// LogoutAllRequest revokes all sessions for a user.
+message LogoutAllRequest {
+  // user_id is the UUID of the user whose sessions should be revoked.
+  string user_id = 1;
+}
+
+// UpdateProfileRequest updates the user's display name.
+message UpdateProfileRequest {
+  // user_id is the UUID of the user to update.
+  string user_id = 1;
+  // name is the new display name.
+  string name = 2;
+}
+
+// UpdateProfileResponse contains the updated user record.
+message UpdateProfileResponse {
+  // user is the updated user record.
+  GetUserResponse user = 1;
+}
+
+// ChangePasswordRequest changes the user's password.
+message ChangePasswordRequest {
+  // user_id is the UUID of the user.
+  string user_id = 1;
+  // old_password is the current password for verification.
+  string old_password = 2;
+  // new_password is the new password (bcrypt-hashed server-side).
+  string new_password = 3;
 }

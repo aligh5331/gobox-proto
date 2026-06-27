@@ -3,6 +3,7 @@ module github.com/aligh/gobox-proto
 go 1.26.3
 
 require (
+	github.com/golang/protobuf v1.5.4
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 )
